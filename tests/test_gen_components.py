@@ -5,14 +5,14 @@ import os
 import torch
 import torch.nn as nn
 
-from gen_components import Filtration, PositionwiseFeedForward, ResUnet
+from models.gen_components import Filtration, PositionwiseFeedForward, ResUnet
 import unittest
 
 
 class TestFilteringCNN(unittest.TestCase):
     def test_shape(self):
-        sino = torch.randn(1, 180, 1024)
-        _ ,n_angles, detect_len = sino.shape
+        sino = torch.randn(1, 1, 1024, 180)
+        _ , _ , detect_len, n_angles = sino.shape
         conv_filter = Filtration(detect_len, n_angles, 100)
         filtered_sino = conv_filter(sino)
         self.assertEqual(sino.shape, filtered_sino.shape)

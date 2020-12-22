@@ -15,12 +15,18 @@ class Filtration(nn.Module):
         res = 1 if kernel_size % 2 == 0 else 0
         kernel_size += res
         pad = kernel_size // 2
-        self.filter1 = Conv1d(n_sino_angles, hidden_dim, kernel_size, padding=pad)
+        self.n_angles = n_sino_angles
+        self.proj_len = proj_vector_length
+        self.filter1 = Conv1d(1, hidden_dim, kernel_size, padding=pad)
         self.filter2 = Conv1d(hidden_dim, n_sino_angles, kernel_size, padding=pad)
     
     def forward(self, x):
+        batch_size = x.shape[0]
+        n_channel = x.shape[1]
+        x = x.contiguous().view((batch_size, n_channel, -1))
         x = self.filter1(x)
         x = self.filter2(x)
+        x = x.contiguous().view((batch_size, n_channel, self.proj_len, self.n_angles))
         return x
 
 

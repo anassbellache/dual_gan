@@ -1,0 +1,41 @@
+basic:
+  name: dual_gan
+  gpu_ids: 0
+  checkpoints_dir: ./checkpoints
+
+model:
+  batch_size: 3
+  detector_size: 1024
+  n_angle: 180
+  load_epoch: 1000
+  hidden_dim: 100
+  fbp_size: 64
+  verbose: True
+
+dataset:
+  num_threads: 4
+  xtrain: ./dataset/
+  ytrain: ./dataset/
+  xtest: ./dataset/
+  ytest: ./dataset/
+
+training:
+  n_epochs: 1000
+  beta1: 0.5
+  print_freq: 200
+  lr: 1e-4
+  beta1: 0.5
+  lr_policy: linear
+  vgg_path: ./vgg19-dcbb9e9d.pth
+  itg: 1
+  itd: 2
+  lmse: 0.5
+  lssim: 2.0
+  ladv: 20
+  continue_train: True
+
+evaluation:
+  results_dir: ./results
+  num_test: 10
+
+
