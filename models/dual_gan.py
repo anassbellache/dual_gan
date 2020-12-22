@@ -51,7 +51,7 @@ class GANLoss(nn.Module):
 class GenOne(nn.Module):
     def __init__(self, opt):
         super(GenOne, self).__init__()
-        self.filter = Filtration(opt.detector_size, opt.n_angle, opt.hidden_dim)
+        self.filter = Filtration(opt.detector_size, opt.n_angle, 3, opt.hidden_dim)
         self.fbp = PositionwiseFeedForward(d_len=opt.detector_size, n_angle=opt.n_angle, d_ff= opt.fbp_size)
         self.refine = ResUnet(1)
     

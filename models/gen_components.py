@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.nn.modules import Conv1d, Linear, Dropout
+from torch.nn.modules import Conv1d, Linear, Dropout, Conv2d
 import torch.nn.functional as F
 from collections import OrderedDict
 
@@ -9,24 +9,20 @@ from torch.autograd import Variable
 
 
 class Filtration(nn.Module):
-    def __init__(self, proj_vector_length, n_sino_angles, hidden_dim):
+    def __init__(self, proj_vector_length, n_sino_angles, kernel_size, hidden_dim):
         super(Filtration, self).__init__()
-        kernel_size = proj_vector_length // 4
-        res = 1 if kernel_size % 2 == 0 else 0
-        kernel_size += res
-        pad = kernel_size // 2
         self.n_angles = n_sino_angles
         self.proj_len = proj_vector_length
-        self.filter1 = Conv1d(1, hidden_dim, kernel_size, padding=pad)
-        self.filter2 = Conv1d(hidden_dim, n_sino_angles, kernel_size, padding=pad)
+        self.filter1 = Conv2d(1, hidden_dim, kernel_size, padding=2)
+        self.filter2 = Conv2d(hidden_dim, 1, kernel_size)
     
     def forward(self, x):
-        batch_size = x.shape[0]
-        n_channel = x.shape[1]
-        x = x.contiguous().view((batch_size, n_channel, -1))
+        #batch_size = x.shape[0]
+        #n_channel = x.shape[1]
+        #x = x.contiguous().view((batch_size, n_channel, -1))
         x = self.filter1(x)
         x = self.filter2(x)
-        x = x.contiguous().view((batch_size, n_channel, self.proj_len, self.n_angles))
+        #x = x.contiguous().view((batch_size, n_channel, self.proj_len, self.n_angles))
         return x
 
 

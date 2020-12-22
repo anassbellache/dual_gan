@@ -13,7 +13,7 @@ class TestFilteringCNN(unittest.TestCase):
     def test_shape(self):
         sino = torch.randn(1, 1, 1024, 180)
         _ , _ , detect_len, n_angles = sino.shape
-        conv_filter = Filtration(detect_len, n_angles, 100)
+        conv_filter = Filtration(detect_len, n_angles, 3, 8)
         filtered_sino = conv_filter(sino)
         self.assertEqual(sino.shape, filtered_sino.shape)
 
@@ -23,7 +23,7 @@ class TestFBPNet(unittest.TestCase):
         sino = torch.randn(1, 180, 1024)
         tomo_slice = torch.randn(1, 1024, 1024) 
         _ ,n_angles, detect_len = sino.shape
-        fbp = PositionwiseFeedForward(detect_len, n_angles, 100)
+        fbp = PositionwiseFeedForward(detect_len, n_angles, 64)
         img = fbp(sino)
         self.assertEqual(img.shape, tomo_slice.shape)
         
