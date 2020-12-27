@@ -8,7 +8,7 @@ class TestBaseOptions(unittest.TestCase):
     def test_model_inputs(self):
         opt = BaseOptions('./config.yaml')
         self.assertEqual(opt.batch_size, 3)
-        self.assertEqual(opt.detector_size, 1024)
+        self.assertEqual(opt.detector_size, 512)
         self.assertEqual(opt.n_angle, 180)
         self.assertEqual(opt.hidden_dim, 100)
         self.assertEqual(opt.fbp_size, 64)

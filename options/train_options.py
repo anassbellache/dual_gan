@@ -26,5 +26,9 @@ class TrainOptions(BaseOptions):
         self.xtest = config['dataset']['xtest']
         self.ytest = config['dataset']['ytest']
         self.lr_policy = config['training']['lr_policy']
-        self.continue_train = config['training']['continue_train']   
+        self.continue_train = config['training']['continue_train']
+        self.source_distance = config['setup']['source_distance']
+        self.det_distance = config['setup']['det_distance']
+        self.det_count = config['setup']['det_count']
+        self.det_spacing = config['setup']['det_spacing']
         self.isTrain = True

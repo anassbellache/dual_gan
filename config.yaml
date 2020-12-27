@@ -5,7 +5,7 @@ basic:
 
 model:
   batch_size: 3
-  detector_size: 1024
+  detector_size: 512
   n_angle: 180
   load_epoch: 1000
   hidden_dim: 100
@@ -37,5 +37,14 @@ training:
 evaluation:
   results_dir: ./results
   num_test: 10
+
+setup:
+  parallel: True
+  source_distance: 1
+  det_distance: 1
+  det_count: 1
+  det_spacing: 1
+
+
 
 

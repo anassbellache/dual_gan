@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch_radon import Radon
+from torch_radon import Radon, RadonFanbeam
 from .gen_components import Filtration, PositionwiseFeedForward, ResUnet
 from pytorch_msssim import ssim, ms_ssim, SSIM, MS_SSIM
 from .base_model import BaseModel
@@ -141,7 +141,12 @@ class DualGAN(BaseModel):
             self.optimizers.append(self.optimizer_G2)
             self.optimizers.append(self.optimizer_D)
             angles = np.linspace(0, np.pi, opt.n_angle, endpoint=False)
-            self.radon = Radon(opt.detector_size, angles, clip_to_circle=True)
+            if opt.parallel:
+                self.radon = Radon(opt.detector_size, angles, clip_to_circle=True)
+            else:
+                self.radon = RadonFanbeam(opt.detector_size, angles, opt.source_distance, 
+                                        opt.det_distance, opt.det_count, opt.det_spacing, 
+                                        clip_to_circle=True)
     
     def set_input(self, input):
         sino, img = input[0], input[1]
@@ -186,8 +191,8 @@ class DualGAN(BaseModel):
         img2 = self.netG_2(in_two)
         pred_fake_1 = self.netD(img1)
         pred_fake_2 = self.netD(img2)
-        sinoG1 = self.radon(img1)
-        sinoG2 = self.radon(img2)
+        sinoG1 = self.radon.forward(img1)
+        sinoG2 = self.radon.forward(img2)
 
         self.loss_G1 = self.loss_gan(pred_fake_1, True) * self.opt.ladv
         self.loss_G2 = self.loss_gan(pred_fake_2, True) * self.opt.ladv        
@@ -197,11 +202,11 @@ class DualGAN(BaseModel):
         self.loss_G2_SSIM = (1 - self.ssim(img2, self.Image_Real)) * self.opt.lssim
         self.loss_sino_G1 = self.criterionMSE(self.Sino_In, sinoG1)
         self.loss_sino_G2 = self.criterionMSE(self.Sino_In, sinoG2)
-        self.loss_G1 = self.loss_G1 + self.loss_G1_MSE + self.loss_G1_SSIM + self.loss_sino_G1
-        self.loss_G2 = self.loss_G2 + self.loss_G2_MSE + self.loss_G2_SSIM + self.loss_sino_G2
+        self.loss_G1_tot = self.loss_G1 + self.loss_G1_MSE + self.loss_G1_SSIM + self.loss_sino_G1
+        self.loss_G2_tot = self.loss_G2 + self.loss_G2_MSE + self.loss_G2_SSIM + self.loss_sino_G2
 
-        self.loss_G1.backward()
-        self.loss_G2.backward()
+        self.loss_G1_tot.backward()
+        self.loss_G2_tot.backward()
         self.optimizer_G1.step()
         self.optimizer_G2.step()
 
