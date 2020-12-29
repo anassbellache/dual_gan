@@ -32,5 +32,5 @@ class TrainOptions(BaseOptions):
         self.det_distance = config['setup']['det_distance']
         self.det_count = config['setup']['det_count']
         self.det_spacing = config['setup']['det_spacing']
-        self.parellel = config['setup']['parallel']
+        self.parallel = config['setup']['parallel']
         self.isTrain = True

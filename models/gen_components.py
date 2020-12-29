@@ -34,8 +34,9 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout = Dropout(dropout)
     
     def forward(self, x):
-        x = x.permute(0, 2, 1)
-        return self.w_2(self.dropout(F.relu(self.w_1(x))))
+        x = x.permute(0, 1, 3, 2)
+        x = self.dropout(F.relu(self.w_1(x)))
+        return self.w_2(x)
 
 
 class ResidualConv(nn.Module):

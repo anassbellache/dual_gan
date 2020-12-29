@@ -69,7 +69,7 @@ def generate_training_batch(filepath, batch_size):
         batch_X = np.array([X[s_idx] for s_idx in idx])
         batch_Y = np.array([Y[s_idx] for s_idx in idx])
 
-        yield  batch_X, batch_Y
+        yield  np.expand_dims(batch_X, axis=1),  np.expand_dims(batch_Y, axis=1)
 
 
 
