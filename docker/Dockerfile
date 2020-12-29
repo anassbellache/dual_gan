@@ -1,17 +1,16 @@
 FROM pytorch/pytorch:1.7.0-cuda11.0-cudnn8-runtime
 
-RUN apt-get update && ap-get install -y python3 python3-pip sudo
+ENV http_proxy "http://195.221.0.35:8080"
 
-RUN pip3 install --no-cache-dir  https://rosh-public.s3-eu-west-1.amazonaws.com/radon/cuda-11.0/torch-1.7/torch_radon-1.0.0-cp38-cp38-linux_x86_64.whl
+ENV https_proxy "http://195.221.0.35:8080"
 
-RUN useradd -m bellachehab
+RUN apt-get update && apt-get install -y curl python3-pip
 
-RUN chown -R bellachehab:bellachehab /home/experiences/grades/bellachehab/dual_gan
+RUN pip install --no-cache-dir  https://rosh-public.s3-eu-west-1.amazonaws.com/radon/cuda-11.0/torch-1.7/torch_radon-1.0.0-cp38-cp38-linux_x86_64.whl
 
-COPY --chown=bellachehab . /home/bellachehab/dual_gan/
+COPY . src/
 
-USER bellachehab
+RUN /bin/bash -c "cd src\
+    && pip3 install -r requirements.txt\
+    && pip install -r requirements.txt"
 
-RUN cd /home/bellachehab/dual_gan/ && pip3 install -r requirements.txt
-
-WORKDIR /home/bellachehab/dual_gan
