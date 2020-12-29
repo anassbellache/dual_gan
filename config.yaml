@@ -18,6 +18,7 @@ dataset:
   ytrain: ./dataset/
   xtest: ./dataset/
   ytest: ./dataset/
+  filename: ./dataset/foam_ct.h5
 
 training:
   n_epochs: 1000
