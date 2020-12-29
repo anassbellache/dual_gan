@@ -6,7 +6,7 @@ import sys, os, time, argparse, shutil, scipy, h5py, glob
 from models.dual_gan import DualGAN
 from data_processor import generate_training_batch, bkgdGen
 from options.train_options import TrainOptions
-from skimage.measure import compare_ssim
+#from skimage.measure import compare_ssim
 
 args = TrainOptions('./config.yaml')
 
@@ -19,6 +19,7 @@ disc_iters, gene_iters = args.itd, args.itg
 lambda_mse, lambda_adv, lambda_ssim = args.lmse, args.ladv, args.lssim
 EPOCHS = 1000
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 itr_out_dir = args.name + '-itrOout'
 if os.path.isdir(itr_out_dir):
@@ -31,7 +32,7 @@ if not os.path.exists("outputs"):
 sys.stdout = open('%s%s' % (itr_out_dir, 'iter-prints.log'), 'w')
 print('X train: {}\nY train: {}\nX test: {}\nY test: {}'.format(args.xtrain, args.ytrain, args.xtest, args.ytest))
 
-mb_data_iter = bkgdGen(data_generator=generate_training_batch(args.filename, batch_size))
+mb_data_iter = bkgdGen(data_generator=generate_training_batch(dir_path + args.filename, batch_size))
 
 dna = DualGAN(args)
 
