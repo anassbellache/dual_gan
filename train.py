@@ -39,8 +39,8 @@ dna = DualGAN(args)
 for epoch in range(EPOCHS):
     time_git_st = time.time()
     for _ge in range(gene_iters):
-        X_batch, Y_batch = mb_data_iter.next()
-        dna.set_input((X_batch, Y_batch))
+        X_batch, Y_batch, labels_batch = mb_data_iter.next()
+        dna.set_input((X_batch, Y_batch, labels_batch))
         dna.backward_G()
     
     itr_prints_gen = '[Info] Epoch: %05d, gloss: %.2f (mse%.3f, adv%.3f, ssiù:%.3f), gen_elapse: %.2fs/itr' % (\
@@ -51,8 +51,8 @@ for epoch in range(EPOCHS):
     time_dit_st = time.time()
 
     for _de in range(disc_iters):
-        X_batch, Y_batch = mb_data_iter.next()
-        dna.set_input((X_batch, Y_batch))
+        X_batch, Y_batch, labels_batch = mb_data_iter.next()
+        dna.set_input((X_batch, Y_batch, labels_batch))
         dna.backward_D()
     
 

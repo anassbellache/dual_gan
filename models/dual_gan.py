@@ -120,7 +120,7 @@ class DualGAN(BaseModel):
         self.loss_gan = GANLoss(self.device)
         self.ssim = SSIM(data_range=255, size_average=True, channel=1)
         self.loss_names = ['G1_loss', 'G2_loss', 'D_loss']
-        self.visual_names = ['Sino_In', 'Image_1', 'Image_2', 'Image_Real']
+        self.visual_names = ['Sino_In', 'Image_In', 'Image_2', 'Image_Real']
 
         if self.isTrain:
             self.model_names = ['G1', 'G2', 'D']
@@ -141,17 +141,18 @@ class DualGAN(BaseModel):
             self.optimizers.append(self.optimizer_G2)
             self.optimizers.append(self.optimizer_D)
             angles = np.linspace(0, np.pi, opt.n_angle, endpoint=False)
-            if opt.parallel:
+            """ if opt.parallel:
                 self.radon = Radon(opt.detector_size, angles, clip_to_circle=True)
             else:
                 self.radon = RadonFanbeam(opt.detector_size, angles, opt.source_distance, 
                                         opt.det_distance, opt.det_count, opt.det_spacing, 
-                                        clip_to_circle=True)
+                                        clip_to_circle=True) """
     
     def set_input(self, input):
-        sino, img = input[0], input[1]
+        sino, img, fbp = input[0], input[1], input[2]
         self.Sino_In = torch.tensor(sino, dtype=torch.float32, requires_grad=True).to(self.device)
         self.Image_Real = torch.tensor(img, dtype=torch.float32, requires_grad=True).to(self.device)
+        self.Image_In = torch.tensor(fbp, dtype=torch.float32, requires_grad=True).to(self.device)
 
     def forward(self):
         self.Image_1 = self.netG_1(self.Sino_In)
@@ -162,9 +163,7 @@ class DualGAN(BaseModel):
         self.set_requires_grad(self.netG_2, False)
         self.optimizer_D.zero_grad()
         img1 = self.netG_1(self.Sino_In)
-        filtered_sino = self.radon.filter_sinogram(self.Sino_In)
-        fbp_rec = self.radon.backprojection(filtered_sino)
-        in_two = torch.cat([img1, fbp_rec])
+        in_two = torch.cat([img1, self.Image_In])
         img2 = self.netG_2(in_two)
         pred_true = self.netD(self.Image_Real)
         pred_fake_1 = self.netD(img1)
@@ -185,14 +184,12 @@ class DualGAN(BaseModel):
         self.optimizer_G1.zero_grad()
         self.optimizer_G2.zero_grad()
         img1 = self.netG_1(self.Sino_In)
-        filtered_sino = self.radon.filter_sinogram(self.Sino_In)
-        fbp_rec = self.radon.backprojection(filtered_sino)
-        in_two = torch.cat([img1, fbp_rec])
+        in_two = torch.cat([img1, self.Image_In])
         img2 = self.netG_2(in_two)
         pred_fake_1 = self.netD(img1)
         pred_fake_2 = self.netD(img2)
-        sinoG1 = self.radon.forward(img1)
-        sinoG2 = self.radon.forward(img2)
+        #sinoG1 = self.radon.forward(img1)
+        #sinoG2 = self.radon.forward(img2)
 
         self.loss_G1 = self.loss_gan(pred_fake_1, True) * self.opt.ladv
         self.loss_G2 = self.loss_gan(pred_fake_2, True) * self.opt.ladv        
@@ -200,10 +197,10 @@ class DualGAN(BaseModel):
         self.loss_G2_MSE = self.criterionMSE(img2, self.Image_Real) * self.opt.lmse
         self.loss_G1_SSIM = (1 - self.ssim(img1, self.Image_Real)) * self.opt.lssim
         self.loss_G2_SSIM = (1 - self.ssim(img2, self.Image_Real)) * self.opt.lssim
-        self.loss_sino_G1 = self.criterionMSE(self.Sino_In, sinoG1)
-        self.loss_sino_G2 = self.criterionMSE(self.Sino_In, sinoG2)
-        self.loss_G1_tot = self.loss_G1 + self.loss_G1_MSE + self.loss_G1_SSIM + self.loss_sino_G1
-        self.loss_G2_tot = self.loss_G2 + self.loss_G2_MSE + self.loss_G2_SSIM + self.loss_sino_G2
+        #self.loss_sino_G1 = self.criterionMSE(self.Sino_In, sinoG1)
+        #self.loss_sino_G2 = self.criterionMSE(self.Sino_In, sinoG2)
+        self.loss_G1_tot = self.loss_G1 + self.loss_G1_MSE + self.loss_G1_SSIM #+ self.loss_sino_G1
+        self.loss_G2_tot = self.loss_G2 + self.loss_G2_MSE + self.loss_G2_SSIM #+ self.loss_sino_G2
 
         self.loss_G1_tot.backward()
         self.loss_G2_tot.backward()

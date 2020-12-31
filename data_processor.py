@@ -57,19 +57,21 @@ def gen_train_batch_bg(x_fn, y_fn, mb_size, in_depth, img_size):
 
 
 def generate_training_batch(filepath, batch_size):
-    X, Y = None
+    X, Y, labels = None
     with h5py.File(filepath, 'r') as f:
         #label = f['image'][:].astype(np.float)
         X = f['filtered_sino'][:].astype(np.float32)
-        Y = f['fbp_image'][:].astype(np.float32)
+        Y = f['fully_reconstructed'][:].astype(np.float32)
+        labels = f['FBP'][:].astype(np.float32)
     
     while True:
         idx = np.random.randint(0, X.shape[0], batch_size)
         #batch_labels = np.array([label[s_idx] for s_idx in idx])
         batch_X = np.array([X[s_idx] for s_idx in idx])
         batch_Y = np.array([Y[s_idx] for s_idx in idx])
+        batch_labels = np.array([labels[s_idx] for s_idx in idx])
 
-        yield  np.expand_dims(batch_X, axis=1),  np.expand_dims(batch_Y, axis=1)
+        yield  np.expand_dims(batch_X, axis=1),  np.expand_dims(batch_Y, axis=1), np.expand_dims(batch_labels, axis=1)
 
 
 
