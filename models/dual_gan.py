@@ -168,10 +168,11 @@ class DualGAN(BaseModel):
         pred_true = self.netD(self.Image_Real)
         pred_fake_1 = self.netD(img1)
         pred_fake_2 = self.netD(img2)
-        loss_D_real =  self.loss_gan(pred_true, True) * self.opt.ladv
+        self.loss_D_real =  self.loss_gan(pred_true, True) * self.opt.ladv
         loss_D_G1 = self.loss_gan(pred_fake_1, False) * self.opt.ladv
         loss_D_G2 = self.loss_gan(pred_fake_2, False) * self.opt.ladv
-        self.D_loss = loss_D_real + loss_D_G1 + loss_D_G2
+        self.loss_D_fake = loss_D_G1 + loss_D_G2
+        self.D_loss = self.loss_D_real + self.loss_D_fake
         self.D_loss.backward()
         self.optimizer_D.step()
         for p in self.netD.parameters():
