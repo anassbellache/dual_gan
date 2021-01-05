@@ -55,8 +55,6 @@ for epoch in range(EPOCHS):
         dna.set_input((X_batch, Y_batch, labels_batch))
         dna.backward_D()
     
-     print('%s; dloss: %.2f (r%.3f, f%.3f), disc_elapse: %.2fs/itr, gan_elapse: %.2fs/itr' % (itr_prints_gen \
-            ,dna.D_loss, dna.loss_D_real.detach().cpu().numpy().mean(),dna.loss_D_fake.detach().cpu().numpy().mean(), \
-            (time.time() - time_dit_st)/disc_iters, time.time()-time_git_st))
+    print('%s; dloss: %.2f (r%.3f, f%.3f), disc_elapse: %.2fs/itr, gan_elapse: %.2fs/itr' % (itr_prints_gen, dna.D_loss, dna.loss_D_real.detach().cpu().numpy().mean(),dna.loss_D_fake.detach().cpu().numpy().mean(), (time.time()-time_dit_st)/disc_iters, time.time()-time_git_st))
 
     
