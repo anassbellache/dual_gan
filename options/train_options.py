@@ -21,6 +21,7 @@ class TrainOptions(BaseOptions):
         self.lmse = float(config['training']['lmse'])
         self.lssim = float(config['training']['lssim'])
         self.ladv = float(config['training']['ladv'])
+        self.lgrad = float(config['training']['lgrad'])
         self.xtrain = config['dataset']['xtrain']
         self.ytrain = config['dataset']['ytrain']
         self.xtest = config['dataset']['xtest']
