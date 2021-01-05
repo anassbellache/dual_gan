@@ -57,7 +57,7 @@ def gen_train_batch_bg(x_fn, y_fn, mb_size, in_depth, img_size):
 
 
 def generate_training_batch(filepath, batch_size):
-    X, Y, labels = None
+    X, Y, labels = None, None, None
     with h5py.File(filepath, 'r') as f:
         #label = f['image'][:].astype(np.float)
         X = f['filtered_sino'][:].astype(np.float32)

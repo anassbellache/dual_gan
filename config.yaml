@@ -6,7 +6,7 @@ basic:
 model:
   batch_size: 3
   detector_size: 512
-  n_angle: 180
+  n_angle: 150
   load_epoch: 1000
   hidden_dim: 100
   fbp_size: 64
@@ -14,11 +14,11 @@ model:
 
 dataset:
   num_threads: 4
-  xtrain: ./dataset/
-  ytrain: ./dataset/
-  xtest: ./dataset/
-  ytest: ./dataset/
-  filename: ./dataset/foam_ct.h5
+  xtrain: ./data/
+  ytrain: ./data/
+  xtest: ./data/
+  ytest: ./data/
+  filename: /data/foam_ct.h5
 
 training:
   n_epochs: 1000

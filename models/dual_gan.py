@@ -133,6 +133,7 @@ class DualGAN(BaseModel):
 
         if self.isTrain:
             self.netD = Discriminator(opt.detector_size)
+            self.netD.to(self.device)
             self.criterionMSE = nn.MSELoss()
             self.optimizer_G1 = torch.optim.Adam(self.netG_1.parameters(), lr=opt.lr, betas=(opt.beta1, 0.99))
             self.optimizer_G2 = torch.optim.Adam(self.netG_2.parameters(), lr=opt.lr, betas=(opt.beta1, 0.99))
@@ -163,10 +164,10 @@ class DualGAN(BaseModel):
         self.set_requires_grad(self.netG_2, False)
         self.optimizer_D.zero_grad()
         img1 = self.netG_1(self.Sino_In)
-        in_two = torch.cat([img1, self.Image_In])
+        in_two = torch.cat([img1, self.Image_In], 1)
         img2 = self.netG_2(in_two)
         pred_true = self.netD(self.Image_Real)
-        pred_fake_1 = self.netD(img1)
+        pred_fake_1 = self.netD(img1.to(self.device))
         pred_fake_2 = self.netD(img2)
         self.loss_D_real =  self.loss_gan(pred_true, True) * self.opt.ladv
         loss_D_G1 = self.loss_gan(pred_fake_1, False) * self.opt.ladv
@@ -185,7 +186,7 @@ class DualGAN(BaseModel):
         self.optimizer_G1.zero_grad()
         self.optimizer_G2.zero_grad()
         img1 = self.netG_1(self.Sino_In)
-        in_two = torch.cat([img1, self.Image_In])
+        in_two = torch.cat([img1, self.Image_In], 1)
         img2 = self.netG_2(in_two)
         pred_fake_1 = self.netD(img1)
         pred_fake_2 = self.netD(img2)
@@ -203,8 +204,9 @@ class DualGAN(BaseModel):
         self.loss_G1_tot = self.loss_G1 + self.loss_G1_MSE + self.loss_G1_SSIM #+ self.loss_sino_G1
         self.loss_G2_tot = self.loss_G2 + self.loss_G2_MSE + self.loss_G2_SSIM #+ self.loss_sino_G2
 
-        self.loss_G1_tot.backward()
+        self.loss_G1_tot.backward(retain_graph=True)
         self.loss_G2_tot.backward()
+        
         self.optimizer_G1.step()
         self.optimizer_G2.step()
 
