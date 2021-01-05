@@ -38,6 +38,102 @@ class PositionwiseFeedForward(nn.Module):
         x = self.dropout(F.relu(self.w_1(x)))
         return self.w_2(x)
 
+class DoubleConv(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.double_conv = nn.Sequential(
+            nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3 ,padding=1),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+
+    def forward(self, x):
+        return self.double_conv(x)
+
+class Down(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.maxpool_conv = nn.Sequential(
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            DoubleConv(in_channels, out_channels)
+        )
+    
+    def forward(self, x):
+        return self.maxpool_conv(x)
+
+class Up(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels=2*in_channels, out_channels=out_channels, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+    
+    def forward(self, x1, x2):
+        x1 = self.up(x1)
+        diffY = x2.size()[2] - x1.size()[2]
+        diffX = x2.size()[3] - x1.size()[3]
+        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
+                        diffY // 2, diffY - diffY // 2])
+        x = torch.cat([x2, x1], dim=1)
+        return self.conv(x)
+
+class OutConv(nn.Module):
+    def __init__(self, in_channels, out_channels, relu=False):
+        super(OutConv, self).__init__()
+        self.has_relu = relu
+        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, padding=0)
+        self.relu = nn.ReLU()
+    
+    def forward(self, x):
+        if self.has_relu:
+            x = self.conv(x)
+            return self.relu(x)
+        else:
+            return self.conv(x)
+
+
+class UNet(nn.Module):
+    def __init__(self, channels_in, channels_out):
+        super(UNet, self).__init__()
+        self.channels_in = channels_in
+        self.channels_out = channels_out
+
+        self.inc = OutConv(channels_in, out_channels=8, relu=True)
+        self.conv1 = DoubleConv(8, 32)
+        self.down1 = Down(32, 64)
+        self.down2 = Down(64, 128)
+        self.down3 = Down(128, 128)
+        self.bottom = nn.Sequential(
+            nn.Conv2d(kernel_size=3, in_channels=128, out_channels=128, padding=1),
+            nn.ReLU()
+        )
+
+        self.up1 = Up(128, 64)
+        self.up2 = Up(64, 32)
+        self.up3 = Up(32, 32)
+        self.conv2 = OutConv(32, 16, relu=True)
+        self.conv3 = OutConv(16, channels_out, relu=False)
+    
+    def forward(self, x):
+        x1 = self.inc(x)
+        x1 = self.conv1(x1)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x4 = self.bottom(x4)
+        x = self.up1(x4, x3)
+        x = self.up2(x, x2)
+        x = self.up3(x, x1)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        return x
+
+
 
 class ResidualConv(nn.Module):
     def __init__(self, input_dim, output_dim, stride, padding):
@@ -73,69 +169,6 @@ class Upsample(nn.Module):
         return self.upsample(x)
 
 
-class Squeeze_Excite_Block(nn.Module):
-    def __init__(self, channel, reduction=16):
-        super(Squeeze_Excite_Block, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.fc = nn.Sequential(
-            nn.Linear(channel, channel // reduction, bias=False),
-            nn.ReLU(inplace=True),
-            nn.Linear(channel // reduction, channel, bias=True),
-            nn.Sigmoid()
-        )
-    
-    def forward(self, x):
-        b, c, _ = x.size()
-        y = self.avg_pool(x).view(b, c)
-        y = self.fc(y).view(b, c, 1, 1)
-        return x * y.expand_as(x)
-
-
-class ASPP(nn.Module):
-    def __init__(self, in_dims, out_dims, rate=[6, 12, 18]):
-        super(ASPP, self).__init__()
-
-        self.aspp_block1 = nn.Sequential(
-            nn.Conv2d(
-                in_dims, out_dims, 3, stride=1, padding=rate[0], dilation=rate[0]
-            ),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(out_dims)
-        )
-        self.aspp_block2 = nn.Sequential(
-            nn.Conv2d(
-                in_dims, out_dims, 3, stride=1, padding=rate[1], dilation=rate[1]
-            ),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(out_dims)
-        )
-        self.aspp_block3 = nn.Sequential(
-            nn.Conv2d(
-                in_dims, out_dims, 3, stride=1, padding=rate[2], dilation=rate[2]
-            ),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(out_dims)
-        )
-
-        self.output = nn.Conv2d(len(rate) * out_dims, out_dims, 1)
-        self._init_weights()
-    
-    def _init_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight)
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-    
-    def forward(self, x):
-        x1 = self.aspp_block1(x)
-        x2 = self.aspp_block1(x)
-        x3 = self.aspp_block3(x)
-        out = torch.cat([x1, x2, x3])
-        return self.output(out)
-
-
 class Upsample_(nn.Module):
     def __init__(self, scale=2):
         super(Upsample_, self).__init__()
@@ -144,33 +177,6 @@ class Upsample_(nn.Module):
 
     def forward(self, x):
         return self.upsample(x)
-
-
-class AttentionBlock(nn.Module):
-    def __init__(self, input_encoder, input_decoder, output_dim):
-        super(AttentionBlock, self).__init__()
-
-        self.conv_encoder = nn.Sequential(
-            nn.BatchNorm2d(input_encoder),
-            nn.ReLU(),
-            nn.Conv2d(input_encoder, output_dim, 3, padding=1),
-            nn.MaxPool2d(2,2)
-        )
-        self.conv_decoder = nn.Sequential(
-            nn.BatchNorm2d(input_decoder),
-            nn.ReLU(),
-            nn.Conv2d(output_dim, 1, 1)
-        )
-        self.conv_atten = nn.Sequential(
-            nn.BatchNorm2d(output_dim),
-            nn.ReLU(),
-            nn.Conv2d(output_dim, 1, 1)
-        )
-
-    def forward(self, x1, x2):
-        out = self.conv_encoder(x1) + self.conv_encoder(x2)
-        out = self.conv_atten(out)
-        return out * x2
 
 
 class ResUnet(nn.Module):
